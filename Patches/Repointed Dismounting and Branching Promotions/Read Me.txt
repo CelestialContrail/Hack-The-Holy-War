@@ -1,0 +1,16 @@
+Repointed Unit-Based Dismounting and Branching Promotions Patch v1.0
+====================================================================
+
+This patch is a version of 542◆ruo0tlxqPQ's Mounting/Dismounting + Class Change Selection 3.1 patch that has been adjusted to not conflict with the Project Naga and Lil Nordion translation patches. I would advise applying this patch after the translation patch of your choice, and versions of this patch that work with both headered and unheadered ROMs have been included.
+
+Once the patch has been applied, you'll still need to set up what classes you want specific characters to use when they dismount or promote. This information is specified in a table starting at (unheadered) address $05F1B2. The table consists of 63 entries that are 8 bytes long, one for each playable character. The entries are ordered by character number - so the first entry is Sigurd's, the second entry is for Naoise, etc.
+
+Each entry has 4 pairs of 1 byte class numbers, listing the class number for the mounted class first and the dismounted class second. The first pair is used for the character's initial class, the second pair is the character's promotion choice if you press Y on the promotion screen, the third pair is the character's promotion choice if you press X on the promotion screen, and the fourth pair is the character's promotion choice if you press R on the promotion screen. If the character doesn't start in a mounted class, only the first value in the pair should be filled in and the second value should be left as FF.
+
+By default after the patch has been applied, all characters only have their first promotion option specified (if they have a promotion option at all), matching with what the character would promote into in vanilla FE4. And only Sigurd and Seliph have classes to dismount into specified in the table.
+
+Mounted characters that have not had a class to dismount into set up in the table will still have the Dismount command appear, but will change into a glitched class upon using it. When using the Mount command afterwards, they will either change into their promoted class or remain in the glitched class.
+
+To prevent that from happening for mounted characters you don't want to dismount into a different class, you have a couple of options. If you don't want any character in a particular mounted class to be able dismount, you can remove the Dismount skill from that class. (This patch adds that skill to all mounted classes by default.) Then the option to Dismount will no longer appear for characters in that class. The other option would be to set a character's dismounted class to be the same as their mounted class - in this case the Dismount command will still appear but will have no practical effect on the character.
+
+Also, if you want a character to be able to promote at all, they need to have a valid class number for their first promotion option. This option is the one used as the default promotion when entering the advisor dialogue that lets you promote a character, so if it isn't valid the character gets rejected from promoting entirely and can't reach the point where you can confirm or cancel the promotion, which is also where you can switch between promotion options.

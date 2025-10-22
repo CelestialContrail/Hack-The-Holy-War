@@ -1,0 +1,347 @@
+All addresses used in the discussion of the changes made by this patch will be for an unheadered ROM.
+
+Combined Table of Class Associations
+====================================
+
+This table starts at $05F1B2 and consists of 63 entries that are 8 bytes long, one for each playable character. The entries are ordered by character number - so the first entry is Sigurd's, the second entry is for Naoise, etc.
+
+Each entry has 4 pairs of 1 byte class numbers, listing the number for the mounted class first and the dismounted class second. The first pair is used for the character's initial class, the second pair is the character's promotion choice if you press Y on the promotion screen, the third pair is the character's promotion choice if you press X on the promotion screen, and the fourth pair is the character's promotion choice if you press R on the promotion screen. Any entry that isn't applicable for a particular character (a dismounted class entry for a character that starts off in an infantry class, for example) is set to FF.
+
+The original table used for associating characters with their promoted class (which starts at $03833C) has had all of its entries set to FF.
+
+Skill Changes
+=============
+
+The Dismount skill has been added to all of the mounted classes that didn't already have it and Naoise has been given Dismount as a character skill. The latter isn't important because of the next change, though.
+
+Removal of Character Dismount Skill Check
+=========================================
+
+At $05E6B1, a jump to another section of code that happens if a check to see if the active character has the Dismount skill fails is replaced with NOPs, effectively treating all characters as if they have the Dismount skill.
+
+Getting the Dismounted Class
+============================
+
+At $04D1ED, instead of the jump instruction going to the subroutine at $0494F5, it has been changed to go to the custom subroutine at $05F100 that retrieves the class number of the dismounted class to use from the table added by the patch. The original instruction that loaded the hard coded class number to dismount into has been replaced by 3 NOP instructions.
+
+Disassembly for the subroutine at $05F100:
+
+05F100	JSL $0495F5				Calls routine that marks the character as having dismounted
+05F104	PHB						Typical saving of register values to the stack so that they can be restored at the end of the subroutine
+05F105	PHP
+05F106	PHK
+05F107	PLB
+05F108	PHX
+05F109	PHY
+05F10A	JSL $04A02D				Calls routine that retrieves the character's class number
+05F10E	STA $0574				Stores the character's current class number in RAM for later comparisons
+05F111	JSL $04A333				Calls routine that retrieves the character's character number
+05F115	DEC						Subtracts 1 from the character number because the table is 0 indexed
+05F116	ASL						Each shift left multiplies the accumulator value by 2, so this multiplies the character number by 8 (size of one entry in the table)
+05F117	ASL
+05F118	ASL
+05F119	TAX						Accumulator value is transferred to the X register to be used as an offset for the following load data calls
+05F11A	LDA $05F1B4,X			Loads the mounted class number for the character's first promotion option
+05F11E	AND #$00FF				Load instructions load 2 bytes at a time in the current mode, this clears out the other byte
+05F121	СМР $0574				Compares the loaded class number to the character's current class number
+05F124	BEQ $05F144				If the class numbers match, skips down to $05F144
+05F126	LDA $05F1B6,X			Loads the mounted class number for the character's second promotion option
+05F12A	AND #$00FF
+05F12D	СМР $0574
+05F130	BEQ $05F14A				If the character is in their second option for their promoted class, skips down to $05F14A
+05F132	LDA $05F1B8,X			Loads the mounted class number for the character's third promotion option
+05F136	AND #$00FF
+05F139	СМР $0574
+05F13C	BEQ $05F150				If the character is in their third option for their promoted class, skips down to $05F150
+05F13E	LDA $05F1B3,X			Loads the initial dismounted class number
+05F142	BRA $05F154				Skips to $05F154
+05F144	LDA $05F1B5,X			Loads the dismounted class number for the character's first promotion option
+05F148	BRA $05F154				Skips to $05F154
+05F14A	LDA $05F1B7,X			Loads the dismounted class number for the character's second promotion option
+05F14E	BRA $05F154				Skips to $05F154
+05F150	LDA $05F1B9,X			Loads the dismounted class number for the character's third promotion option
+05F154	PLY						Restores the saved register values
+05F155	PLX
+05F156	PLP
+05F157	PLB
+05F158	RTL						Returns to where the routine was called from
+
+Getting the Mounted Class
+============================
+
+At $04D260, instead of the jump instruction going to the subroutine at $04960A, it has been changed to go to the custom subroutine at $05F159 that retrieves the class number of the dismounted class to use from the table added by the patch. The original instruction that loaded the hard coded class number to dismount into has been replaced by 3 NOP instructions.
+
+Disassembly for the subroutine at $05F159:
+
+05F159	JSL $04960A				Calls routine that clears the character's dismounted status
+05F15D	PHB						Typical saving of register values to the stack so that they can be restored at the end of the subroutine
+05F15E	PHP
+05F15F	PHK
+05F160	PLB
+05F161	PHX
+05F162	PHY
+05F163	JSL $04A02D				Calls routine that retrieves the character's class number
+05F167	STA $0574				Stores the character's current class number in RAM for later comparisons
+05F16A	JSL $04A333				Calls routine that retrieves the character's character number
+05F16E	DEC						Subtracts 1 from the character number because the table is 0 indexed
+05F16F	ASL						Each shift left multiplies the accumulator value by 2, so this multiplies the character number by 8 (size of one entry in the table)
+05F170	ASL
+05F171	ASL
+05F172	TAX						Accumulator value is transferred to the X register to be used as an offset for the following load data calls
+05F173	LDA $05F1B5,X			Loads the dismounted class number for the character's first promotion option
+05F177	AND #$00FF				Load instructions load 2 bytes at a time in the current mode, this clears out the other byte
+05F17A	СМР $0574				Compares the loaded class number to the character's current class number
+05F17D	BEQ $05F19D				If the class numbers match, skips down to $05F19D
+05F17F	LDA $05F1B7,X			Loads the dismounted class number for the character's second promotion option
+05F183	AND #$00FF
+05F186	СМР $0574
+05F189	BEQ $05F1A3				If the character is in their second option for their promoted class, skips down to $05F1A3
+05F18B	LDA $05F1B9,X			Loads the dismounted class number for the character's third promotion option
+05F18F	AND #$00FF
+05F192	СМР $0574
+05F195	BEQ $05F1AD				If the character is in their third option for their promoted class, skips down to $05F1AD
+05F197	LDA $05F1B2,X			Loads the initial mounted class number
+05F19B	BRA $05F1AD				Skips to $05F1AD
+05F19D	LDA $05F1B4,X			Loads the mounted class number for the character's first promotion option
+05F1A1	BRA $05F1AD				Skips to $05F1AD
+05F1A3	LDA $05F1B6,X			Loads the mounted class number for the character's second promotion option
+05F1A7	BRA $05F1AD				Skips to $05F1AD
+05F1A9	LDA $05F1B8,X			Loads the mounted class number for the character's third promotion option
+05F1AD	PLY						Restores the saved register values
+05F1AE	PLX
+05F1AF	PLP
+05F1B0	PLB
+05F1B1	RTL						Returns to where the routine was called from
+
+Starting the Promotion Sequence
+===============================
+
+After selecting the promotion option from the home castle's menu, the routine at $0AEF4B is called to begin the sequence that has the current generation's advisor either tell you that the current character can't promote or give you the option to promote them to their promoted class. This routine isn't altered by the patch, but the beginning of it provides some important context for the patch's promotion related changes.
+
+0AEF4B    LDA #$8000			This initial storing of values into RAM appears to be necessary setup for the promotion sequence, since it gets repeated later in the added code sections that restart the promotion sequence with a different promoted class selection
+0AEF4E    STA $0532
+0AEF51    LDA #$B6AD
+0AEF54    STA $0531
+0AEF57    LDA #$2000
+0AEF5A    STA $053A
+0AEF5D    LDA #$000C
+0AEF60    TAX
+0AEF61    JSL $07A438			Calls routine that checks if the character has a valid promoted class and if they meet the level requirement for it
+0AEF65    BCC $0AEF6B			If carry flag isn't set, skips down to $0AEF6B since we have a valid promoted class
+0AEF67    JML $0AF00D			Jumps to the version of the promotion sequence that handles the character not having a valid promoted class
+
+The routine continues from there but the remainder isn't relevant enough to the patch's changes to include.
+
+Checking For Valid Promoted Class And Meeting Its Level Requirement
+===================================================================
+
+The routine at $07A438 is used to retrieve information about what class the character can promote into, if any, and checks to see if the character meets the level requirement to promote into that class. After the patch's changes, the class that is set as the character's first promotion option in the class association table is the one that is checked by this routine.
+
+07A438    PHB					Typical saving of register values to the stack so that they can be restored at the end of the subroutine
+07A439    PHP
+07A43A    PHK
+07A43B    PLB
+07A43C    PHX
+07A43D    PHY
+07A43E    LDA #$0000
+07A441    STA $7E2000			Stores default value of 0 (meaning level requirement check is not met) in RAM
+07A445    JSL $0495E5			Calls routine that gets whether or not the character is in the Dismounted state
+07A449    BIT #$1000
+07A44C    BNE $07A496			If the character is dismounted, skips down to $07A496 (rejects promotion attempt)
+07A44E    JSL $0AFDD6			Calls routine that sets the X register to the correct offset for the character's entry in the class association table 
+07A452    LDA $05F1B2,X			Loads the character's unpromoted class
+07A456    AND #$00FF
+07A459    CMP #$00FF
+07A45C    BEQ $07A496			If the character doesn't have a valid unpromoted class, skips down to $07A496 (rejects promotion attempt)
+07A45E    CMP $0574
+07A461    BNE $07A496			If the character isn't currently their unpromoted class, skips down to $07A496 (rejects promotion attempt because presumably they're already promoted)
+07A463    LDA $05F1B4,X			Loads the character's first promotion option
+07A467    AND #$00FF
+07A46A    CMP #$00FF
+07A46D    BEQ $07A496			If the character doesn't have a valid first promotion option, skips down to $07A496 (rejects promotion attempt)
+07A46F    STA $7E2002			Otherwise, stores the first promotion option in RAM for later use
+07A473    JSL $07A49D			Calls routine that stores the location of the class data entry for the character's first promotion option for later use
+07A477    JSL $049E23			Calls routine that gets the character's current level
+07A47B    STA $0574				Stores the character's current level for later comparison
+07A47E    JSL $07A4E1			Calls routine that gets the required level to promote field from the class data
+07A482    DEC					Subtracts one from the required level
+07A483    CMP $0574
+07A486    BPL $07A490			If the character's level is less than the required level, skips down to $07A490
+07A488    NOP
+07A489    LDA #$0001
+07A48C    STA $7E2000			Stores 1 (meaning level requirement check was met) in RAM
+07A490    PLY					Restores the saved register values
+07A491    PLX
+07A492    PLP
+07A493    PLB
+07A494    CLC					Clears the carry flag to indicate that the character has a valid promoted class
+07A495    RTL					Returns to where the subroutine was called from
+        ----------------
+07A496    PLY					Restores the saved register values
+07A497    PLX
+07A498    PLP
+07A499    PLB
+07A49A    SEC					Sets the carry flag to indicate that the character's promoted class couldn't be obtained or isn't valid
+07A49B    BRA $07A495			Goes to statement that returns to where the subroutine was called from
+
+The routine at $0AFDD6 is a utility routine added by the patch that calculates the correct offset to read the current character's entry in the class association table and set the X register to that value.
+
+0AFDD6    JSL $04A02D			Calls routine that retrieves the character's class number
+0AFDDA    STA $0574				Stores the character's current class number in RAM for later comparisons
+0AFDDD    JSL $04A333			Calls routine that retrieves the character's character number
+0AFDE1    DEC					Subtracts 1 from the character number because the table is 0 indexed
+0AFDE2    ASL					Each shift left multiplies the accumulator value by 2, so this multiplies the character number by 8 (size of one entry in the table)
+0AFDE3    ASL
+0AFDE4    ASL
+0AFDE5    TAX					Sets the X register to the calculated offset
+0AFDE6    RTL					Returns to where the subroutine was called from
+
+Input Processing During Promotion Sequence
+==========================================
+
+The routine that handles input processing for the portion of the promotion sequence where you either confirm the promotion or cancel it is located at $0AF048. The patch alters it to respond to the Y, X, or R buttons being pressed.
+
+0AF048  LDA #$2000				Not entirely sure what the early parts of this routine are doing - they are unchanged from a vanilla FE4 ROM
+0AF04B  STA $053A
+0AF04E  JSR $D092
+0AF051  JSR $A46E
+0AF054  LDA #$0000
+0AF057  JSL $0AB043
+0AF05B  LDA $E8	  				Loads a value from RAM that corresponds with what button was pressed
+0AF05D  CMP #$0040				Checks if X button was the pressed button
+0AF060  BEQ $0AF088				If so, skips down to $0AF088
+0AF062  CMP #$4000				Otherwise, checks if Y button was the pressed button
+0AF065  BEQ $0AF08D				If so, skips down to $0AF08D
+0AF067  CMP #$0010				Otherwise, checks if R button was the pressed button
+0AF06A  BEQ $0AF092				If so, skips down to $0AF092
+0AF06C  CMP #$8000				Otherwise, checks if a different button was the pressed button, not sure which button
+0AF06F  BEQ $0AF083				If so, skips down to $0AF083
+0AF071  CMP #$0080				Otherwise, checks if a different button was the pressed button, not sure which button
+0AF074  BNE $0AF0A4				If not, skips down to where we return to where the subroutine was called from (so ignores the input)
+0AF076  LDA $08A3				Not sure what sets the value in this RAM location, but 0 appears to mean confirm and 1 appears to mean cancel
+0AF079  CMP #$0000
+0AF07C  BEQ $0AF097				If confirm comparison is true, skips down to $0AF097
+0AF07E  CMP #$0001
+0AF081  BNE $0AF0A4				If cancel comparison is false, skips down to where we return to where the subroutine was called from (so ignores the input)
+0AF083  JSR $FD57				Calls routine at $0AFD57, which declines promotion and leaves the promotion sequence
+0AF086  BRA $0AF0A4				Skips down to where we return to where the subroutine was called from
+0AF088  JSR $FD0F				Calls routine at $0AFD0F that handles the X button being pressed
+0AF08B  BRA $0AF0A4				Skips down to where we return to where the subroutine was called from
+0AF08D  JSR $EF4B				Calls routine at $0AEF4B, restarting the entire promotion sequence from the beginning (including check for having a promoted class and meeting the level requirement)
+0AF090  BRA $0AF0A4				Skips down to where we return to where the subroutine was called from
+0AF092  JSR $FD33				Calls routine at $0AFD33 that handles the R button being pressed
+0AF095  BRA $0AF0A4				Skips down to where we return to where the subroutine was called from
+0AF097  LDA #$000A				From here down handles the currently selected promotion being confirmed
+0AF09A  JSL $008FAD
+0AF09E  LDA #$0004
+0AF0A1  STA $0592
+0AF0A4  RTS
+
+Handling X Button Pressed
+=========================
+
+0AFD0F  LDA #$8000				Replicates the initial set up for the promotion sequence
+0AFD12  STA $0532
+0AFD15  LDA #$B6AD
+0AFD18  STA $0531
+0AFD1B  LDA #$2000
+0AFD1E  STA $053A
+0AFD21  LDA #$000C
+0AFD24  TAX
+0AFD25  JSL $0AFD88				Calls routine that retrieves the character's second promotion option
+0AFD29  BCS $0AFD2F				If the character doesn't have a second promotion option, skips over the jump below
+0AFD2B  JML $0AEF6B				Otherwise, goes through the sequence for the check for having a promoted class and meeting the level requirement having succeeded
+0AFD2F  JSR $EF4B				Calls routine at $0AEF4B, restarting the entire promotion sequence from the beginning (including check for having a promoted class and meeting the level requirement)
+0AFD32  RTS						Returns to where the subroutine was called from
+
+0AFD88  PHB						Typical saving of register values to the stack so that they can be restored at the end of the subroutine
+0AFD89  PHP
+0AFD8A  PHK
+0AFD8B  PLB
+0AFD8C  PHX
+0AFD8D  PHY
+0AFD8E  JSL $0AFDD6				Calls routine that sets the X register to the correct offset for the character's entry in the class association table
+0AFD92  LDA $05F1B6,X			Loads the class number for the character's second promotion option
+0AFD96  AND #$00FF
+0AFD99  CMP #$00FF
+0AFD9C  BEQ $0AFDA8				If the class number matches #$00FF, it's not a valid class to promote into, so skips down to $0AFDA8 to handle that situation
+0AFD9E  STA $7E2002				Otherwise, stores the class number for the character's second promotion option in RAM to be used later
+0AFDA2  PLY						Restores the saved register values
+0AFDA3  PLX
+0AFDA4  PLP
+0AFDA5  PLB
+0AFDA6  CLC						Clears the carry flag, indicating that the character has a valid second promotion option
+0AFDA7  RTL						Returns to where the subroutine was called from
+                     ----------------
+0AFDA8  PLY						Restores the saved register values
+0AFDA9  PLX
+0AFDAA  PLP
+0AFDAB  PLB
+0AFDAC  SEC						Sets the carry flag, indicating that the character doesn't have a second promotion option
+0AFDAD  BRA $0AFDA7				Goes to statement that returns to where the subroutine was called from
+
+Handling R Button Pressed
+=========================
+
+0AFD33    LDA #$8000			Replicates the initial set up for the promotion sequence
+0AFD36    STA $0532
+0AFD39    LDA #$B6AD
+0AFD3C    STA $0531
+0AFD3F    LDA #$2000
+0AFD42    STA $053A
+0AFD45    LDA #$000C
+0AFD48    TAX
+0AFD49    JSL $0AFDAF			Calls routine that retrieves the character's third promotion option
+0AFD4D    BCS $0AFD53			If the character doesn't have a third promotion option, skips over the jump below
+0AFD4F    JML $0AEF6B			Otherwise, goes through the sequence for the check for having a promoted class and meeting the level requirement having succeeded
+0AFD53    JSR $EF4B				Calls routine at $0AEF4B, restarting the entire promotion sequence from the beginning (including check for having a promoted class and meeting the level requirement)
+0AFD56    RTS					Returns to where the subroutine was called from
+
+0AFDAF    PHB					Typical saving of register values to the stack so that they can be restored at the end of the subroutine
+0AFDB0    PHP
+0AFDB1    PHK
+0AFDB2    PLB
+0AFDB3    PHX
+0AFDB4    PHY
+0AFDB5    JSL $0AFDD6			Calls routine that sets the X register to the correct offset for the character's entry in the class association table
+0AFDB9    LDA $05F1B8,X			Loads the class number for the character's second promotion option
+0AFDBD    AND #$00FF
+0AFDC0    CMP #$00FF
+0AFDC3    BEQ $0AFDCF			If the class number matches #$00FF, it's not a valid class to promote into, so skips down to $0AFDCF to handle that situation
+0AFDC5    STA $7E2002			Otherwise, stores the class number for the character's third promotion option in RAM to be used later
+0AFDC9    PLY					Restores the saved register values
+0AFDCA    PLX
+0AFDCB    PLP
+0AFDCC    PLB
+0AFDCD    CLC					Clears the carry flag, indicating that the character has a valid third promotion option
+0AFDCE    RTL					Returns to where the subroutine was called from
+        ----------------
+0AFDCF    PLY					Restores the saved register values
+0AFDD0    PLX
+0AFDD1    PLP
+0AFDD2    PLB
+0AFDD3    SEC					Sets the carry flag, indicating that the character doesn't have a third promotion option
+0AFDD4    BRA $0AFDCE			Goes to statement that returns to where the subroutine was called from
+
+Cancelling the Promotion Sequence
+=================================
+
+The routine at $0AFD57 was originally part of the input handling routine that starts at $0AF048 in vanilla FE4, but was moved into a separate routine by the patch to have more room for handling different buttons being pressed. It handles declining to promote the character and leaving the promotion sequence. It's included here for completeness, but the details of what it does isn't directly relevant to the patch's changes.
+
+0AFD57    LDA #$0021
+0AFD5A    JSL $008FAD
+0AFD5E    LDA #$000C
+0AFD61    TAX
+0AFD62    LDA $0ACEEA,X
+0AFD66    STA $25
+0AFD68    LDA $0ACEE9,X
+0AFD6C    STA $24
+0AFD6E    LDA #$0003
+0AFD71    JSL $11811C
+0AFD75    LDX #$0000
+0AFD78    JSR $CE54
+0AFD7B    LDA #$0001
+0AFD7E    STA $0592
+0AFD81    LDA #$0005
+0AFD84    STA $0594
+0AFD87    RTS
