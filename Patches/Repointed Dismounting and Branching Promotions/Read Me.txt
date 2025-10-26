@@ -18,5 +18,6 @@ Also, if you want a character to be able to promote at all, they need to have a 
 Changelog
 =========
 
+v1.2 - Moved promotion related added code again because of a conflict with the Lil Nordion English translation
 v1.1 - Moved another section of added code that conflicted with code added by the English translation patches
 v1.0 - Initial version of the repointed patch
